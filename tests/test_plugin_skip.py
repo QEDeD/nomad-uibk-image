@@ -247,3 +247,5 @@ def test_workflow_delegates_skip_handling_to_shared_adapter():
     assert "${GITHUB_REPOSITORY,,}" in workflow
     assert "${GITHUB_SHA}" in workflow
     assert "steps.manual_meta.outputs.tags || steps.meta.outputs.tags" in workflow
+    assert workflow.count("docker compose up -d --quiet-pull --wait") == 1
+    assert "docker compose logs --no-color app jupyter" in workflow
