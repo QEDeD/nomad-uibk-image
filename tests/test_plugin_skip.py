@@ -249,3 +249,12 @@ def test_workflow_delegates_skip_handling_to_shared_adapter():
     assert "steps.manual_meta.outputs.tags || steps.meta.outputs.tags" in workflow
     assert workflow.count("docker compose up -d --quiet-pull --wait") == 1
     assert "docker compose logs --no-color app jupyter" in workflow
+
+
+def test_jupyter_pyzmq_layer_uses_one_locked_wheel():
+    root = Path(__file__).parents[1]
+    pyproject = (root / "pyproject.toml").read_text()
+    dockerfile = (root / "Dockerfile").read_text()
+
+    assert '"pyzmq==27.1.0"' in pyproject
+    assert 'uv pip install --reinstall --no-deps "pyzmq==27.1.0"' in dockerfile

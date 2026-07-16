@@ -4852,6 +4852,7 @@ jupyter = [
     { name = "jupyterhub" },
     { name = "jupyterlab-server" },
     { name = "pyvis" },
+    { name = "pyzmq" },
     { name = "voila" },
 ]
 plugins = [
@@ -4896,6 +4897,7 @@ requires-dist = [
     { name = "pynxtools", marker = "extra == 'plugins'", specifier = "==0.12.0" },
     { name = "pynxtools-apm", marker = "extra == 'plugins'", specifier = ">=0.4.2" },
     { name = "pyvis", marker = "extra == 'jupyter'" },
+    { name = "pyzmq", marker = "extra == 'jupyter'", specifier = "==27.1.0" },
     { name = "voila", marker = "extra == 'jupyter'" },
 ]
 provides-extras = ["plugins", "jupyter", "gpu-action", "cpu-action", "dev"]
