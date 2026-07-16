@@ -4865,6 +4865,14 @@ plugins = [
     { name = "pynxtools-apm" },
 ]
 
+[package.dev-dependencies]
+test = [
+    { name = "nomad-plugin-tests" },
+    { name = "pytest" },
+    { name = "pyyaml" },
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "ipyaggrid", marker = "extra == 'jupyter'" },
@@ -4891,6 +4899,14 @@ requires-dist = [
     { name = "voila", marker = "extra == 'jupyter'" },
 ]
 provides-extras = ["plugins", "jupyter", "gpu-action", "cpu-action", "dev"]
+
+[package.metadata.requires-dev]
+test = [
+    { name = "nomad-plugin-tests", specifier = "==0.2.4" },
+    { name = "pytest", specifier = ">=8.3.5,<10" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "ruff", specifier = ">=0.15,<0.16" },
+]
 
 [[package]]
 name = "nomad-lab"
@@ -5044,6 +5060,19 @@ version = "0.1.15"
 source = { git = "https://github.com/FAIRmat-NFDI/nomad-north-voila.git?rev=main#b4367eb14340d09c300262a7895e3e910e680d4a" }
 dependencies = [
     { name = "nomad-lab" },
+]
+
+[[package]]
+name = "nomad-plugin-tests"
+version = "0.2.4"
+source = { registry = "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/39/eb/5f855c79937a1704ea832a2110686074ded719ba0b33b46f92e83d437af5/nomad_plugin_tests-0.2.4.tar.gz", hash = "sha256:93f3d73efdf84f1cd17ae9127f27efcc518cb2094b64b39ba707ffdaed181e1c", size = 17934, upload-time = "2026-03-24T13:23:11.196Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/82/97/3170845cc572e9b24d9cef1243b90470179ab81eaab8f20968d7e11f061e/nomad_plugin_tests-0.2.4-py3-none-any.whl", hash = "sha256:fed19fe5ba546dbad708c120692ac26733e60c08813240441d9aa167034e4100", size = 11589, upload-time = "2026-03-24T13:23:10.15Z" },
 ]
 
 [[package]]

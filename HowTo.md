@@ -142,7 +142,9 @@ In addition to unit tests, the pipeline also verifies that all example uploads c
 
 For example upload tests, the CI uses the image built in the Build Image step. It then runs the Docker container and starts up the application to confirm that it functions correctly. This approach ensures that if the pipeline passes, the app is more likely to run smoothly in a Dockerized environment on a server, not just locally.
 
-If you need to disable tests for specific plugins, update the **PLUGIN_TESTS_PLUGINS_TO_SKIP** variable in [.github/workflows/docker-publish.yml](./.github/workflows/docker-publish.yml#L21) by adding the plugin names to the existing list.
+If you need to disable tests for specific plugins, update the **PLUGIN_TESTS_PLUGINS_TO_SKIP** scalar in [.github/workflows/docker-publish.yml](./.github/workflows/docker-publish.yml#L21). Use comma-separated distribution names, for example `"nomad-measurements,nomad-pvcomb"`; installed module names are also accepted. Whitespace separators remain accepted for compatibility with earlier template documentation. Distribution selectors are resolved to installed modules using standard Python package-name normalization; module names then match exactly. A partial or case-variant module name does not match, and an unknown selector fails both test stages. The list applies to both plugin unit tests and example-upload tests.
+
+The test tools are explicitly locked in the `test` dependency group. Reproduce the CI environment with `uv sync --frozen --extra plugins --group test`, then run focused tests with `uv run --frozen --extra plugins --group test pytest tests/test_plugin_skip.py`.
 
 ### Set Up Regular Package Updates with Dependabot
 

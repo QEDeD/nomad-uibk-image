@@ -1,12 +1,18 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from nomad.client import api
 from nomad.config import config
 
 
 if TYPE_CHECKING:
     from nomad.client import Auth
+
+
+def get_nomad_api():
+    """Initialize NOMAD's client before loading plugin configuration."""
+    from nomad.client import api
+
+    return api
 
 
 @pytest.fixture(scope="session")
@@ -44,8 +50,10 @@ def make_request_with_retry(
 
 
 def post_request(url: str, auth: "Auth", json=None):
+    api = get_nomad_api()
     return api.post(url, auth=auth, headers={"Accept": "application/json"}, json=json)
 
 
 def get_request(url: str, auth: "Auth", json=None):
+    api = get_nomad_api()
     return api.get(url, auth=auth, headers={"Accept": "application/json"})

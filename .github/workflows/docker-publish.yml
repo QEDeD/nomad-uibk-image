@@ -19,8 +19,8 @@ env:
   # If you want to include custom documentation, create a fork of the repo below and link the forked repo here
   NOMAD_DOCS_REPO: https://github.com/FAIRmat-NFDI/nomad-docs.git
   NOMAD_DOCS_REPO_REF: ""
-  # If you want to skip the tests for some plugins, add them here as a single string where
-  # each plugin is separated by whitespace
+  # Comma-separated distribution names are canonical. Whitespace separators remain
+  # accepted for compatibility. The same list applies to unit and example-upload tests.
   PLUGIN_TESTS_PLUGINS_TO_SKIP: "nomad-pvcomb"
 
 permissions:
@@ -94,12 +94,11 @@ jobs:
         env:
           PLUGIN_TESTS_CI_NODE_INDEX: ${{ matrix.group }}
         run: |
-          # replace the yaml list with a string, use a `,` to separate the plugins
-          PLUGINS_STRING=$(echo "$PLUGIN_TESTS_PLUGINS_TO_SKIP" | tr '\n' ',' | sed 's/,$//')
           uv run \
+            --frozen \
             --extra plugins \
-            --with "nomad-plugin-tests" \
-            nomad-plugin-tests --plugins-to-skip "$PLUGINS_STRING"
+            --group test \
+            python tests/plugin_skip.py
 
   # Job 3: Build and Push Docker Image
   build:
@@ -219,10 +218,8 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --extra plugins --group test
 
       - name: Run tests
         working-directory: tests
-        run: |
-          export PLUGINS_STRING=$(echo "$PLUGIN_TESTS_PLUGINS_TO_SKIP" | tr '\n' ',' | sed 's/,$//')
-          uv run --extra plugins pytest -p no:warnings -sv
+        run: uv run --frozen --extra plugins --group test pytest -p no:warnings -sv
