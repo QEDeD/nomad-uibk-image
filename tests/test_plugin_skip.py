@@ -243,3 +243,7 @@ def test_workflow_delegates_skip_handling_to_shared_adapter():
     assert "plugins_to_skip:" in workflow
     assert 'default: "nomad-pvcomb"' in workflow
     assert "${{ inputs.plugins_to_skip || 'nomad-pvcomb' }}" in workflow
+    assert "github.event_name == 'workflow_dispatch'" in workflow
+    assert "${GITHUB_REPOSITORY,,}" in workflow
+    assert "${GITHUB_SHA}" in workflow
+    assert "steps.manual_meta.outputs.tags || steps.meta.outputs.tags" in workflow

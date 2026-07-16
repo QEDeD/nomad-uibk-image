@@ -150,9 +150,19 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
+        if: github.event_name != 'workflow_dispatch'
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}${{ matrix.image_suffix }}
+
+      - name: Set deterministic metadata for manual verification
+        id: manual_meta
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          IMAGE_SUFFIX: ${{ matrix.image_suffix }}
+        run: |
+          repository="${GITHUB_REPOSITORY,,}"
+          echo "tags=${REGISTRY}/${repository}${IMAGE_SUFFIX}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
@@ -168,12 +178,12 @@ jobs:
           cache-to: type=gha,mode=max
           target: ${{ matrix.target }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.manual_meta.outputs.tags || steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Set image output
         run: |
-          FIRST_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          FIRST_TAG=$(echo "${{ steps.manual_meta.outputs.tags || steps.meta.outputs.tags }}" | head -n1)
           echo "${{ matrix.service }}_IMAGE=$FIRST_TAG" >> $GITHUB_ENV
 
     outputs:
