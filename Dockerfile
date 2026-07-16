@@ -232,7 +232,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     # Use inexact to avoid removing pre-installed packages in the environment
     # Use no-install-project to skip installing the current project (`nomad-distribution`)
     uv sync --extra plugins --extra jupyter --no-install-project --inexact \
- && uv pip install --reinstall --no-deps "pyzmq==27.1.0"
+ && uv pip install --system --reinstall --no-deps "pyzmq==27.1.0"
 
 
 FROM quay.io/jupyter/base-notebook:${JUPYTER_VERSION} AS jupyter

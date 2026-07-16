@@ -257,4 +257,4 @@ def test_jupyter_pyzmq_layer_uses_one_locked_wheel():
     dockerfile = (root / "Dockerfile").read_text()
 
     assert '"pyzmq==27.1.0"' in pyproject
-    assert 'uv pip install --reinstall --no-deps "pyzmq==27.1.0"' in dockerfile
+    assert 'uv pip install --system --reinstall --no-deps "pyzmq==27.1.0"' in dockerfile
