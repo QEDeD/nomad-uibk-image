@@ -14,6 +14,7 @@ from nomad_plugin_tests.plugin_selection import (
 
 ROOT = Path(__file__).parents[1]
 PINNED_CANDIDATE = "1439e997ccc1c1200171f43a75f8566ed15329dc"
+PVCOMB_CANDIDATE = "e1b28bd7ea6e94705031d2884b2a3e056ebc2232"
 
 
 def test_selector_contract_does_not_drift():
@@ -50,8 +51,9 @@ def test_workflow_passes_one_scalar_unchanged_and_uses_locked_tools():
     assert "uv sync --frozen --all-extras" not in workflow
     assert "pytest -p no:warnings -sv" in workflow
     assert "plugins_to_skip:" in workflow
-    assert 'default: "nomad-pvcomb"' in workflow
-    assert "${{ inputs.plugins_to_skip || 'nomad-pvcomb' }}" in workflow
+    assert 'default: ""' in workflow
+    assert "${{ inputs.plugins_to_skip }}" in workflow
+    assert "inputs.plugins_to_skip ||" not in workflow
     assert "github.event_name == 'workflow_dispatch'" in workflow
     assert "${GITHUB_REPOSITORY,,}" in workflow
     assert "${GITHUB_SHA}" in workflow
@@ -83,6 +85,30 @@ def test_selector_tool_is_immutably_pinned_and_present_in_lock():
     assert locked_packages[0]["source"] == {
         "git": "https://github.com/QEDeD/nomad-plugin-tests.git"
         f"?rev={PINNED_CANDIDATE}#{PINNED_CANDIDATE}"
+    }
+
+
+def test_pvcomb_fix_is_immutably_pinned_and_present_in_lock():
+    with (ROOT / "pyproject.toml").open("rb") as file:
+        pyproject = tomllib.load(file)
+    requirement = next(
+        item
+        for item in pyproject["project"]["optional-dependencies"]["plugins"]
+        if item.startswith("nomad-pvcomb @ git+")
+    )
+    assert requirement.rpartition("@")[2] == PVCOMB_CANDIDATE
+    assert pyproject["tool"]["uv"]["override-dependencies"] == [requirement]
+
+    with (ROOT / "uv.lock").open("rb") as file:
+        lock = tomllib.load(file)
+    locked_packages = [
+        package for package in lock["package"] if package["name"] == "nomad-pvcomb"
+    ]
+
+    assert len(locked_packages) == 1
+    assert locked_packages[0]["source"] == {
+        "git": "https://github.com/QEDeD/nomad-pvcomb.git"
+        f"?rev={PVCOMB_CANDIDATE}#{PVCOMB_CANDIDATE}"
     }
 
 

@@ -12,10 +12,10 @@ on:
   workflow_dispatch:
     inputs:
       plugins_to_skip:
-        description: "Comma-separated plugin distribution or exact module names"
+        description: "Optional comma-separated plugin distribution or exact module names"
         required: false
         type: string
-        default: "nomad-pvcomb"
+        default: ""
 
 env:
   REGISTRY: ghcr.io
@@ -27,7 +27,7 @@ env:
   NOMAD_DOCS_REPO_REF: ""
   # Comma-separated distribution names are canonical. Whitespace separators remain
   # accepted for compatibility. The same list applies to unit and example-upload tests.
-  PLUGIN_TESTS_PLUGINS_TO_SKIP: ${{ inputs.plugins_to_skip || 'nomad-pvcomb' }}
+  PLUGIN_TESTS_PLUGINS_TO_SKIP: ${{ inputs.plugins_to_skip }}
 
 permissions:
   contents: write

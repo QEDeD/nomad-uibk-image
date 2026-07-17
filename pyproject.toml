@@ -32,7 +32,7 @@ plugins = [
   "nomad-uibk-plugin @ git+https://github.com/Thin-Layers-Technology-Innsbruck/nomad-UIBK-plugin.git@c895fe6f2bb38a531fca3ddcbef284fa5bc7dfc3",
   "pynxtools==0.12.0",
   "pynxtools-apm>=0.4.2",
-  "nomad-pvcomb @ git+https://codebase.helmholtz.cloud/pvcomb/nomad-pvcomb.git@main",
+  "nomad-pvcomb @ git+https://github.com/QEDeD/nomad-pvcomb.git@e1b28bd7ea6e94705031d2884b2a3e056ebc2232",
   "nomad-north-voila @ git+https://github.com/FAIRmat-NFDI/nomad-north-voila.git@main",
   "nomad-north-jupyter>=0.2.6",
 ]
@@ -72,6 +72,12 @@ test = [
 [tool.uv]
 extra-index-url = [
   "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple",
+]
+
+# nomad-uibk-plugin currently declares the upstream PVComb Git URL. Use the
+# independently verified candidate for every occurrence in this distribution.
+override-dependencies = [
+  "nomad-pvcomb @ git+https://github.com/QEDeD/nomad-pvcomb.git@e1b28bd7ea6e94705031d2884b2a3e056ebc2232",
 ]
 
 required-version = ">=0.8.0"
