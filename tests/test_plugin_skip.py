@@ -257,6 +257,14 @@ def test_jupyter_pyzmq_layer_uses_one_locked_wheel():
     dockerfile = (root / "Dockerfile").read_text()
 
     assert '"pyzmq==27.1.0"' in pyproject
-    assert 'site-packages/zmq"' in dockerfile
+    assert dockerfile.count('site-packages/zmq"') == 2
     assert 'uv pip install --system --reinstall --no-deps "pyzmq==27.1.0"' in dockerfile
-    assert "assert zmq.__version__ == '27.1.0'" in dockerfile
+    final_stage = dockerfile.split(
+        "FROM quay.io/jupyter/base-notebook:${JUPYTER_VERSION} AS jupyter\n", 1
+    )[1]
+    cleanup = final_stage.index('site-packages/zmq"')
+    environment_copy = final_stage.index(
+        "COPY --from=jupyter_builder /opt/conda /opt/conda"
+    )
+    import_check = final_stage.index("assert zmq.__version__ == '27.1.0'")
+    assert cleanup < environment_copy < import_check

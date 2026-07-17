@@ -197,6 +197,8 @@ COPY --chown=nomad:${UID} --from=gpu_action_builder /opt/venv /opt/venv
 
 FROM quay.io/jupyter/base-notebook:${JUPYTER_VERSION} AS jupyter_builder
 
+ARG PYTHON_VERSION
+
 ENV UV_PROJECT_ENVIRONMENT=/opt/conda \
     UV_FROZEN=1
 
@@ -239,6 +241,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 FROM quay.io/jupyter/base-notebook:${JUPYTER_VERSION} AS jupyter
+
+ARG PYTHON_VERSION
+
 # Fix: https://github.com/hadolint/hadolint/wiki/DL4006
 # Fix: https://github.com/koalaman/shellcheck/wiki/SC3014
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -260,7 +265,11 @@ RUN apt-get update \
       texlive-fonts-recommended \
       texlive-plain-generic \
       # clean cache and logs
-      && rm -rf /var/lib/apt/lists/* /var/log/* /var/tmp/* ~/.npm
+      && rm -rf /var/lib/apt/lists/* /var/log/* /var/tmp/* ~/.npm \
+      # Docker COPY merges directories, so remove the incompatible package
+      # from the fresh base before copying the builder environment over it.
+      && rm -rf "/opt/conda/lib/python${PYTHON_VERSION}/site-packages/zmq" \
+                "/opt/conda/lib/python${PYTHON_VERSION}/site-packages"/pyzmq-*.dist-info
 
 # Switch back to jovyan to avoid accidental container runs as root
 USER ${NB_UID}
@@ -268,6 +277,8 @@ WORKDIR "${HOME}"
 
 COPY --from=uv_image /uv /bin/uv
 COPY --from=jupyter_builder /opt/conda /opt/conda
+
+RUN python -c "import zmq; assert zmq.__version__ == '27.1.0'"
 
 
 # Get rid ot the following message when you open a terminal in jupyterlab:
