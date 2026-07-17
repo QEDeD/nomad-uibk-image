@@ -4907,7 +4907,7 @@ provides-extras = ["plugins", "jupyter", "gpu-action", "cpu-action", "dev"]
 
 [package.metadata.requires-dev]
 test = [
-    { name = "nomad-plugin-tests", git = "https://github.com/QEDeD/nomad-plugin-tests.git?rev=1439e997ccc1c1200171f43a75f8566ed15329dc" },
+    { name = "nomad-plugin-tests", git = "https://github.com/QEDeD/nomad-plugin-tests.git?rev=6619c2ce509988e302d4d1fab0fcebe20e4e1487" },
     { name = "pytest", specifier = ">=8.3.5,<10" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", specifier = ">=0.15,<0.16" },
@@ -5070,7 +5070,7 @@ dependencies = [
 [[package]]
 name = "nomad-plugin-tests"
 version = "0.3.0"
-source = { git = "https://github.com/QEDeD/nomad-plugin-tests.git?rev=1439e997ccc1c1200171f43a75f8566ed15329dc#1439e997ccc1c1200171f43a75f8566ed15329dc" }
+source = { git = "https://github.com/QEDeD/nomad-plugin-tests.git?rev=6619c2ce509988e302d4d1fab0fcebe20e4e1487#6619c2ce509988e302d4d1fab0fcebe20e4e1487" }
 dependencies = [
     { name = "click" },
     { name = "tomli", marker = "python_full_version < '3.11'" },

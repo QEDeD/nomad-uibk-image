@@ -13,7 +13,7 @@ from nomad_plugin_tests.plugin_selection import (
 
 
 ROOT = Path(__file__).parents[1]
-PINNED_CANDIDATE = "1439e997ccc1c1200171f43a75f8566ed15329dc"
+PINNED_CANDIDATE = "6619c2ce509988e302d4d1fab0fcebe20e4e1487"
 PVCOMB_CANDIDATE = "e1b28bd7ea6e94705031d2884b2a3e056ebc2232"
 
 

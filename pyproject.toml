@@ -63,7 +63,7 @@ dev = ["nomad-lab[parsing, infrastructure, dev]>=1.4.3"]
 test = [
   # Fork release candidate. Replace with nomad-plugin-tests==0.3.0 after the
   # upstream package release is published.
-  "nomad-plugin-tests @ git+https://github.com/QEDeD/nomad-plugin-tests.git@1439e997ccc1c1200171f43a75f8566ed15329dc",
+  "nomad-plugin-tests @ git+https://github.com/QEDeD/nomad-plugin-tests.git@6619c2ce509988e302d4d1fab0fcebe20e4e1487",
   "pytest>=8.3.5,<10",
   "pyyaml>=6.0",
   "ruff>=0.15,<0.16",

@@ -151,17 +151,17 @@ adopting the template changes. Run this from the distribution root:
 
 ```sh
 uv run \
-  --with 'nomad-plugin-tests @ https://github.com/QEDeD/nomad-plugin-tests/releases/download/v0.3.0-qeded.1/nomad_plugin_tests-0.3.0-py3-none-any.whl' \
+  --with 'nomad-plugin-tests @ https://github.com/QEDeD/nomad-plugin-tests/releases/download/v0.3.0-qeded.2/nomad_plugin_tests-0.3.0-py3-none-any.whl' \
   nomad-plugin-tests \
   --plugins-to-skip 'simulationworkflowschema nomad-pvcomb'
 ```
 
 For a source-based immutable pin, use commit
-`1439e997ccc1c1200171f43a75f8566ed15329dc` instead:
+`6619c2ce509988e302d4d1fab0fcebe20e4e1487` instead:
 
 ```sh
 uv run \
-  --with 'nomad-plugin-tests @ git+https://github.com/QEDeD/nomad-plugin-tests.git@1439e997ccc1c1200171f43a75f8566ed15329dc' \
+  --with 'nomad-plugin-tests @ git+https://github.com/QEDeD/nomad-plugin-tests.git@6619c2ce509988e302d4d1fab0fcebe20e4e1487' \
   nomad-plugin-tests \
   --plugins-to-skip 'simulationworkflowschema nomad-pvcomb'
 ```
