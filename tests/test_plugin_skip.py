@@ -1,242 +1,51 @@
-from subprocess import CompletedProcess
 from pathlib import Path
 
-import pytest
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
 
-from plugin_skip import (
+from nomad_plugin_tests.plugin_selection import (
     PluginIdentity,
-    build_plugin_test_command,
-    format_skip_resolution,
-    format_unknown_selector_error,
-    normalize_distribution_name,
     parse_plugin_skip_list,
-    plugin_module_is_skipped,
     resolve_skip_selectors,
-    run_plugin_tests,
 )
 
 
-@pytest.mark.parametrize(
-    "value, expected",
-    [
-        (None, ()),
-        ("", ()),
-        ("plugin", ("plugin",)),
-        ("plugin,plugin-extra", ("plugin", "plugin-extra")),
-        ("plugin, plugin-extra", ("plugin", "plugin-extra")),
-        ("plugin plugin-extra", ("plugin", "plugin-extra")),
-        ("plugin\nplugin-extra", ("plugin", "plugin-extra")),
-        ("plugin, plugin-extra\nthird", ("plugin", "plugin-extra", "third")),
-        ("plugin,plugin,plugin-extra", ("plugin", "plugin-extra")),
-        (" \tplugin,plugin-extra\n", ("plugin", "plugin-extra")),
-        (
-            "simulationworkflowschema nomad-pvcomb",
-            ("simulationworkflowschema", "nomad-pvcomb"),
-        ),
-    ],
-)
-def test_parse_plugin_skip_list(value, expected):
-    assert parse_plugin_skip_list(value) == expected
+ROOT = Path(__file__).parents[1]
+PINNED_CANDIDATE = "1439e997ccc1c1200171f43a75f8566ed15329dc"
 
 
-def test_distribution_name_normalization():
-    assert normalize_distribution_name("Nomad_PVComb") == "nomad-pvcomb"
-    assert normalize_distribution_name("nomad.pvcomb") == "nomad-pvcomb"
-
-
-def test_example_matching_uses_resolved_exact_module_names():
-    resolution = resolve_skip_selectors(
-        ("nomad-schema-plugin-run",),
-        (PluginIdentity("runschema", "nomad-schema-plugin-run"),),
-    )
-
-    assert plugin_module_is_skipped("runschema", resolution)
-    assert not plugin_module_is_skipped("RUNSCHEMA", resolution)
-    assert not plugin_module_is_skipped("nomad_schema_plugin_run", resolution)
-    assert not plugin_module_is_skipped("runschema-extra", resolution)
-
-
-def test_distribution_resolution_does_not_conflate_module_names():
-    plugins = (
-        PluginIdentity("foo_bar", "foo-bar"),
-        PluginIdentity("foo.bar", "other-distribution"),
-    )
-    resolution = resolve_skip_selectors(("foo-bar",), plugins)
-
-    assert resolution.matched_module_names == ("foo_bar",)
-    assert plugin_module_is_skipped("foo_bar", resolution)
-    assert not plugin_module_is_skipped("foo.bar", resolution)
-
-
-def test_resolve_module_and_distribution_names_and_report_unknown():
+def test_selector_contract_does_not_drift():
     plugins = (
         PluginIdentity("simulationworkflowschema", "simulation-workflow-schema"),
         PluginIdentity("nomad_pvcomb", "nomad-pvcomb"),
+        PluginIdentity("plugin", "plugin-package"),
+        PluginIdentity("plugin_extra", "plugin-extra"),
     )
 
-    resolution = resolve_skip_selectors(
-        ("simulationworkflowschema", "nomad-pvcomb", "nomad-pvcom"), plugins
+    selectors = parse_plugin_skip_list(
+        " simulationworkflowschema, nomad-pvcomb\nnomad-pvcomb "
     )
+    resolution = resolve_skip_selectors(selectors, plugins)
 
-    assert resolution.matched == plugins
-    assert resolution.matched_module_names == (
-        "simulationworkflowschema",
-        "nomad_pvcomb",
-    )
-    assert resolution.unknown == ("nomad-pvcom",)
-
-
-def test_missing_distribution_name_does_not_create_a_normalized_alias():
-    plugins = (PluginIdentity("foo_bar", None),)
-
-    normalized_alias = resolve_skip_selectors(("FOO-BAR",), plugins)
-    exact_module = resolve_skip_selectors(("foo_bar",), plugins)
-
-    assert normalized_alias.matched == ()
-    assert normalized_alias.unknown == ("FOO-BAR",)
-    assert exact_module.matched == plugins
-    assert exact_module.unknown == ()
+    assert selectors == ("simulationworkflowschema", "nomad-pvcomb")
+    assert resolution.matched == plugins[:2]
+    assert resolution.unknown == ()
+    assert resolve_skip_selectors(("plugin",), plugins).matched == plugins[2:3]
+    assert resolve_skip_selectors(("PLUGIN",), plugins).unknown == ("PLUGIN",)
 
 
-@pytest.mark.parametrize(
-    "value, expected_argument",
-    [
-        ("", ""),
-        ("nomad-pvcomb", "nomad_pvcomb"),
-        (
-            "simulationworkflowschema nomad-pvcomb",
-            "simulationworkflowschema,nomad_pvcomb",
-        ),
-    ],
-)
-def test_effective_plugin_test_command(value, expected_argument):
-    plugins = (
-        PluginIdentity("simulationworkflowschema", "simulation-workflow-schema"),
-        PluginIdentity("nomad_pvcomb", "nomad-pvcomb"),
-    )
-    resolution = resolve_skip_selectors(parse_plugin_skip_list(value), plugins)
-
-    assert build_plugin_test_command(resolution) == [
-        "nomad-plugin-tests",
-        "--plugins-to-skip",
-        expected_argument,
-    ]
-
-
-def test_runner_reports_actual_matches(capsys):
-    commands = []
-
-    def runner(command, **kwargs):
-        commands.append((command, kwargs))
-        print("child output")
-        return CompletedProcess(command, 0)
-
-    return_code = run_plugin_tests(
-        "nomad-pvcomb",
-        plugins=(PluginIdentity("nomad_pvcomb", "nomad-pvcomb"),),
-        runner=runner,
-    )
-
-    assert return_code == 0
-    assert commands == [
-        (
-            ["nomad-plugin-tests", "--plugins-to-skip", "nomad_pvcomb"],
-            {"check": False},
-        )
-    ]
-    output = capsys.readouterr()
-    assert output.out.splitlines() == [
-        "Requested plugin skip selectors: nomad-pvcomb",
-        "Matched plugin packages: nomad_pvcomb (nomad-pvcomb)",
-        "child output",
-    ]
-
-
-def test_unknown_selector_fails_before_test_tool_runs(capsys):
-    def runner(command, **kwargs):  # pragma: no cover - must not be called
-        raise AssertionError((command, kwargs))
-
-    return_code = run_plugin_tests(
-        "nomad-pvcom",
-        plugins=(PluginIdentity("nomad_pvcomb", "nomad-pvcomb"),),
-        runner=runner,
-    )
-
-    assert return_code == 2
-    output = capsys.readouterr()
-    assert "Requested plugin skip selectors: nomad-pvcom" in output.err
-    assert "Unknown plugin skip selectors: nomad-pvcom" in output.err
-    assert "nomad_pvcomb (nomad-pvcomb)" in output.err
-    assert output.out == ""
-
-
-def test_mixed_known_and_unknown_selectors_report_the_successful_match(capsys):
-    def runner(command, **kwargs):  # pragma: no cover - must not be called
-        raise AssertionError((command, kwargs))
-
-    return_code = run_plugin_tests(
-        "simulationworkflowschema nomad-pvcomb",
-        plugins=(PluginIdentity("nomad_pvcomb", "nomad-pvcomb"),),
-        runner=runner,
-    )
-
-    assert return_code == 2
-    output = capsys.readouterr()
-    assert output.out == ""
-    assert output.err.splitlines() == [
-        "Requested plugin skip selectors: simulationworkflowschema, nomad-pvcomb",
-        "Matched plugin packages: nomad_pvcomb (nomad-pvcomb)",
-        "Unknown plugin skip selectors: simulationworkflowschema",
-        "Installed plugin names: nomad_pvcomb (nomad-pvcomb)",
-    ]
-
-
-def test_unknown_selector_error_lists_installed_identities():
-    plugins = (PluginIdentity("runschema", "nomad-schema-plugin-run"),)
-    resolution = resolve_skip_selectors(("misspelled",), plugins)
-
-    assert format_unknown_selector_error(resolution, plugins) == (
-        "Requested plugin skip selectors: misspelled\n"
-        "Matched plugin packages: <none>\n"
-        "Unknown plugin skip selectors: misspelled\n"
-        "Installed plugin names: runschema (nomad-schema-plugin-run)"
-    )
-
-
-def test_unknown_selector_error_formats_missing_distribution_metadata():
-    plugins = (PluginIdentity("foo_bar", None),)
-    resolution = resolve_skip_selectors(("FOO-BAR",), plugins)
-
-    assert format_unknown_selector_error(resolution, plugins) == (
-        "Requested plugin skip selectors: FOO-BAR\n"
-        "Matched plugin packages: <none>\n"
-        "Unknown plugin skip selectors: FOO-BAR\n"
-        "Installed plugin names: foo_bar (<unknown distribution>)"
-    )
-
-
-def test_example_resolution_report_uses_shared_formatter():
-    resolution = resolve_skip_selectors(
-        ("nomad-pvcomb",),
-        (PluginIdentity("nomad_pvcomb", "nomad-pvcomb"),),
-    )
-
-    assert format_skip_resolution(resolution, context="example uploads") == (
-        "Requested plugin skip selectors for example uploads: nomad-pvcomb",
-        "Matched plugin packages for example uploads: nomad_pvcomb (nomad-pvcomb)",
-    )
-
-
-def test_workflow_delegates_skip_handling_to_shared_adapter():
-    workflow = (
-        Path(__file__).parents[1] / ".github/workflows/docker-publish.yml"
-    ).read_text()
+def test_workflow_passes_one_scalar_unchanged_and_uses_locked_tools():
+    workflow = (ROOT / ".github/workflows/docker-publish.yml").read_text()
 
     assert "PLUGINS_STRING" not in workflow
+    assert "tr '\\n'" not in workflow
     assert "--with" not in workflow
+    assert '--plugins-to-skip "$PLUGIN_TESTS_PLUGINS_TO_SKIP"' in workflow
+    assert "python tests/plugin_skip.py" not in workflow
     assert "--group test" in workflow
     assert "--frozen" in workflow
-    assert "python tests/plugin_skip.py" in workflow
     assert "uv sync --frozen --extra plugins --group test" in workflow
     assert "uv sync --frozen --all-extras" not in workflow
     assert "pytest -p no:warnings -sv" in workflow
@@ -251,10 +60,81 @@ def test_workflow_delegates_skip_handling_to_shared_adapter():
     assert "docker compose logs --no-color app jupyter" in workflow
 
 
+def test_selector_tool_is_immutably_pinned_and_present_in_lock():
+    with (ROOT / "pyproject.toml").open("rb") as file:
+        pyproject = tomllib.load(file)
+    requirement = next(
+        item
+        for item in pyproject["dependency-groups"]["test"]
+        if item.startswith("nomad-plugin-tests @ git+")
+    )
+    assert requirement.rpartition("@")[2] == PINNED_CANDIDATE
+
+    with (ROOT / "uv.lock").open("rb") as file:
+        lock = tomllib.load(file)
+    locked_packages = [
+        package
+        for package in lock["package"]
+        if package["name"] == "nomad-plugin-tests"
+    ]
+
+    assert len(locked_packages) == 1
+    assert locked_packages[0]["version"] == "0.3.0"
+    assert locked_packages[0]["source"] == {
+        "git": "https://github.com/QEDeD/nomad-plugin-tests.git"
+        f"?rev={PINNED_CANDIDATE}#{PINNED_CANDIDATE}"
+    }
+
+
+def test_example_selection_is_runtime_scoped_and_uses_shared_exact_matcher():
+    source = (ROOT / "tests/test_example_uploads.py").read_text()
+
+    assert "@pytest.mark.parametrize" in source
+    assert "def example_upload_ids" not in source
+    assert "nomad_plugin_tests.plugin_selection" in source
+    assert "plugin_module_is_skipped" in source
+    assert "select_identities_by_module" in source
+    assert "format_requested_and_matched" in source
+    assert "format_actually_skipped" in source
+    assert "PLUGIN_TESTS_PLUGINS_TO_SKIP" in source
+    assert "PLUGINS_STRING" not in source
+
+
+def test_nomad_client_still_initializes_before_configuration():
+    conftest_source = (ROOT / "tests/conftest.py").read_text()
+    example_source = (ROOT / "tests/test_example_uploads.py").read_text()
+
+    assert "def get_nomad_api" in conftest_source
+    assert example_source.index("get_nomad_api()") < example_source.index(
+        "config.load_plugins()"
+    )
+
+
+def test_example_reporting_is_module_scoped_and_precedes_plugin_loading():
+    conftest_source = (ROOT / "tests/conftest.py").read_text()
+    source = (ROOT / "tests/test_example_uploads.py").read_text()
+    selection_source = source[
+        source.index("def get_example_upload_ids") : source.index(
+            "@pytest.mark.parametrize"
+        )
+    ]
+
+    assert "pytest_sessionstart" not in conftest_source
+    assert "PLUGIN_TESTS_PLUGINS_TO_SKIP" not in conftest_source
+    assert selection_source.index("if resolution.unknown") < selection_source.index(
+        "get_example_upload_entrypoints()"
+    )
+    assert selection_source.index(
+        "format_requested_and_matched"
+    ) < selection_source.index("get_example_upload_entrypoints()")
+    assert selection_source.index(
+        "get_example_upload_entrypoints()"
+    ) < selection_source.index("format_actually_skipped")
+
+
 def test_jupyter_pyzmq_layer_uses_one_locked_wheel():
-    root = Path(__file__).parents[1]
-    pyproject = (root / "pyproject.toml").read_text()
-    dockerfile = (root / "Dockerfile").read_text()
+    pyproject = (ROOT / "pyproject.toml").read_text()
+    dockerfile = (ROOT / "Dockerfile").read_text()
 
     assert '"pyzmq==27.1.0"' in pyproject
     assert dockerfile.count('site-packages/zmq"') == 2

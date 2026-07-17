@@ -4904,7 +4904,7 @@ provides-extras = ["plugins", "jupyter", "gpu-action", "cpu-action", "dev"]
 
 [package.metadata.requires-dev]
 test = [
-    { name = "nomad-plugin-tests", specifier = "==0.2.4" },
+    { name = "nomad-plugin-tests", git = "https://github.com/QEDeD/nomad-plugin-tests.git?rev=1439e997ccc1c1200171f43a75f8566ed15329dc" },
     { name = "pytest", specifier = ">=8.3.5,<10" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", specifier = ">=0.15,<0.16" },
@@ -5066,15 +5066,11 @@ dependencies = [
 
 [[package]]
 name = "nomad-plugin-tests"
-version = "0.2.4"
-source = { registry = "https://gitlab.mpcdf.mpg.de/api/v4/projects/2187/packages/pypi/simple" }
+version = "0.3.0"
+source = { git = "https://github.com/QEDeD/nomad-plugin-tests.git?rev=1439e997ccc1c1200171f43a75f8566ed15329dc#1439e997ccc1c1200171f43a75f8566ed15329dc" }
 dependencies = [
     { name = "click" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/39/eb/5f855c79937a1704ea832a2110686074ded719ba0b33b46f92e83d437af5/nomad_plugin_tests-0.2.4.tar.gz", hash = "sha256:93f3d73efdf84f1cd17ae9127f27efcc518cb2094b64b39ba707ffdaed181e1c", size = 17934, upload-time = "2026-03-24T13:23:11.196Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/97/3170845cc572e9b24d9cef1243b90470179ab81eaab8f20968d7e11f061e/nomad_plugin_tests-0.2.4-py3-none-any.whl", hash = "sha256:fed19fe5ba546dbad708c120692ac26733e60c08813240441d9aa167034e4100", size = 11589, upload-time = "2026-03-24T13:23:10.15Z" },
 ]
 
 [[package]]

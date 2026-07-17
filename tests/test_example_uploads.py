@@ -12,18 +12,22 @@ from conftest import (
     make_request_with_retry,
     post_request,
 )
-from plugin_skip import (
-    SKIP_LIST_ENV_VAR,
+from nomad_plugin_tests.plugin_selection import (
     discover_plugin_identities,
-    format_skip_resolution,
+    format_actually_skipped,
+    format_requested_and_matched,
     format_unknown_selector_error,
     parse_plugin_skip_list,
     plugin_module_is_skipped,
     resolve_skip_selectors,
+    select_identities_by_module,
 )
 
 if TYPE_CHECKING:
     from nomad.config.models.plugins import ExampleUploadEntryPoint
+
+
+SKIP_LIST_ENV_VAR = "PLUGIN_TESTS_PLUGINS_TO_SKIP"
 
 
 def get_example_upload_entrypoints() -> list["ExampleUploadEntryPoint"]:
@@ -45,14 +49,23 @@ def get_example_upload_entrypoints() -> list["ExampleUploadEntryPoint"]:
 
 
 def get_example_upload_ids() -> list[str]:
-    selectors = parse_plugin_skip_list(os.getenv(SKIP_LIST_ENV_VAR))
     installed_plugins = discover_plugin_identities()
-    resolution = resolve_skip_selectors(selectors, installed_plugins)
+    resolution = resolve_skip_selectors(
+        parse_plugin_skip_list(os.getenv(SKIP_LIST_ENV_VAR)), installed_plugins
+    )
     if resolution.unknown:
-        raise ValueError(format_unknown_selector_error(resolution, installed_plugins))
+        raise ValueError(
+            format_unknown_selector_error(
+                resolution,
+                installed_plugins,
+                context="example upload tests",
+            )
+        )
 
     if resolution.requested:
-        for line in format_skip_resolution(resolution, context="example uploads"):
+        for line in format_requested_and_matched(
+            resolution, context="example upload tests"
+        ):
             print(line, file=sys.stderr, flush=True)
 
     eligible_entry_points = [
@@ -60,18 +73,18 @@ def get_example_upload_ids() -> list[str]:
         for entry_point in get_example_upload_entrypoints()
         if entry_point.id and not entry_point.from_examples_directory
     ]
-    skipped_packages = sorted(
-        {
-            entry_point.plugin_package
-            for entry_point in eligible_entry_points
-            if entry_point.plugin_package
-            and plugin_module_is_skipped(entry_point.plugin_package, resolution)
-        }
+    skipped_module_names = {
+        entry_point.plugin_package
+        for entry_point in eligible_entry_points
+        if entry_point.plugin_package
+        and plugin_module_is_skipped(entry_point.plugin_package, resolution)
+    }
+    actually_skipped = select_identities_by_module(
+        resolution.matched, skipped_module_names
     )
     if resolution.requested:
         print(
-            "Example uploads skipped for plugin packages: "
-            + (", ".join(skipped_packages) or "<none>"),
+            format_actually_skipped(actually_skipped, context="example upload tests"),
             file=sys.stderr,
             flush=True,
         )

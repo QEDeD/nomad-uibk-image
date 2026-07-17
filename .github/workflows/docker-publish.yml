@@ -104,7 +104,8 @@ jobs:
             --frozen \
             --extra plugins \
             --group test \
-            python tests/plugin_skip.py
+            nomad-plugin-tests \
+            --plugins-to-skip "$PLUGIN_TESTS_PLUGINS_TO_SKIP"
 
   # Job 3: Build and Push Docker Image
   build:
